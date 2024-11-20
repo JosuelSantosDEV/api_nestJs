@@ -5,11 +5,15 @@ import { UserEntity } from './User.entity';
 import { v4 } from 'uuid';
 import { ListUserData } from './dto/ListUserData.dto';
 import { UpdateUserData } from './dto/UpdateUserData.dto';
+import { UserService } from './User.service';
 
 @Controller('/users')
 export class userController {
 
-    constructor(private repository: UserRepository){}
+    constructor(
+        private readonly repository: UserRepository,
+        private readonly userService: UserService
+    ){}
 
     @Post()
     async createUser(@Body() userData: UserDTO) {
@@ -20,7 +24,7 @@ export class userController {
         userEntity.password = userData.password;
         userEntity.id = v4()
 
-        await this.repository.add(userEntity);
+        await this.userService.createUser(userEntity);
         return { 
             id: userEntity.id,
             msg: "User created with successfull"
@@ -28,19 +32,18 @@ export class userController {
     }
 
     @Get()
-    async getUser() {
+    async getUsers() {
         
-        const users = await this.repository.get();
-        return users.map(user => new ListUserData(user.id, user.name, user.email));  
+        const users = await this.userService.listUsers();
+        return users;
     }
 
     @Put('/:id')
     async updateUser(@Param('id') id: string, @Body() updateData: UpdateUserData) {
 
-        const updatedUser = await this.repository.update(id, updateData);
+        await this.userService.updateUser(id, updateData);
 
         return {
-            user: updatedUser,
             msg: "User updated with successfull"
         }
         
@@ -49,7 +52,7 @@ export class userController {
     @Delete('/:id')
     async deleteUser(@Param('id') id: string) {
 
-        const updatedUser = await this.repository.delete(id);
+        await this.userService.deleteUser(id);
 
         return {
             msg: "User deleted with successfull"
